@@ -56,7 +56,7 @@ export class AppState extends Model<IAppState> {
 			}
 			return new ProductItem(item, this.events);
 		});
-		this.emitChanges('items:changed', { catalog: this.catalog });
+		this.emitChanges('items:changed');
 	}
 
 	changeCatalog(item: ProductItem, status: ProductStatus) {
@@ -66,7 +66,7 @@ export class AppState extends Model<IAppState> {
 			}
 			return new ProductItem(product, this.events);
 		});
-		this.emitChanges('items:changed', { catalog: this.catalog });
+		this.emitChanges('item:changed', item);
 	}
 
 	toggleOrderedProduct(item: ProductItem) {
@@ -84,8 +84,12 @@ export class AppState extends Model<IAppState> {
 	clearBasket() {
 		this.order.items = [];
 		this.catalog.forEach((item) => {
-			item.status = 'active';
+			if (item.status !== 'active') {
+				item.status = 'active';
+				this.events.emit('item:changed', item);
+			}
 		});
+		this.emitChanges('basket:changed');
 	}
 
 	getTotal() {

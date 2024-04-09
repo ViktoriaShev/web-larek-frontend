@@ -12,7 +12,11 @@ import { Card, CardOpened } from './components/Card';
 import { cloneTemplate, createElement, ensureElement } from './utils/utils';
 import { Modal } from './components/common/Modal';
 import { Basket, CardBasket } from './components/common/Basket';
-import { IOrderFormPayMethodAddress, IOrderFormPersonalData } from './types';
+import {
+	IOrderFormPayMethodAddress,
+	IOrderFormPersonalData,
+	IProduct,
+} from './types';
 import { Order } from './components/Order';
 import { Contact } from './components/Contact';
 import { Success } from './components/common/Success';
@@ -65,15 +69,13 @@ events.on('contacts:submit', () => {
 			const success = new Success(cloneTemplate(successTemplate), {
 				onClick: () => {
 					modal.close();
-					events.emit('basket:changed');
 				},
 			});
-			appData.clearBasket();
 			success.description = appData.order.total;
-
 			modal.render({
 				content: success.render({}),
 			});
+			appData.clearBasket();
 		})
 		.catch((err) => {
 			console.error(err);
@@ -157,7 +159,7 @@ events.on('basket:open', () => {
 });
 
 events.on('basket:changed', (item: ProductItem) => {
-	if (item) {
+	if (Object.keys(item).length !== 0) {
 		appData.changeCatalog(item, item.status);
 		appData.toggleOrderedProduct(item);
 	}
@@ -174,6 +176,7 @@ events.on('basket:changed', (item: ProductItem) => {
 		});
 	});
 	basket.total = appData.getTotal();
+	basket.button = appData.getProductInBasket().length === 0;
 	page.counter = appData.getProductInBasket().length;
 });
 
@@ -218,6 +221,23 @@ events.on('card:select', (item: ProductItem) => {
 	appData.setPreview(item);
 });
 
+events.on('item:changed', (item: ProductItem) => {
+	const card = new Card('card', cloneTemplate(cardCatalogTemplate), {
+		onClick: () => events.emit('card:select', item),
+	});
+	const ItemProduct: HTMLElement = card.render({
+		category: item.category,
+		title: item.title,
+		image: item.image,
+		labelPrice: item.labelPrice,
+	});
+	const index: number = appData.catalog.findIndex(
+		(data) => data.id === item.id
+	);
+	page.updateCatalogItem(index, ItemProduct);
+	page.counter = appData.getProductInBasket().length;
+});
+
 events.on<CatalogChangeEvent>('items:changed', () => {
 	page.catalog = appData.catalog.map((item) => {
 		const card = new Card('card', cloneTemplate(cardCatalogTemplate), {
@@ -231,6 +251,7 @@ events.on<CatalogChangeEvent>('items:changed', () => {
 		});
 	});
 	page.counter = appData.getProductInBasket().length;
+	basket.button = appData.getProductInBasket().length === 0;
 });
 
 events.on('modal:open', () => {

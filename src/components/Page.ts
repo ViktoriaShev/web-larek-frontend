@@ -1,6 +1,8 @@
 import { Component } from './base/Component';
 import { IEvents } from './base/events';
 import { ensureElement } from '../utils/utils';
+import { IAppState, IProduct } from '../types';
+import { ProductItem } from './AppData';
 
 interface IPage {
 	counter: number;
@@ -40,6 +42,15 @@ export class Page extends Component<IPage> {
 			this._wrapper.classList.add('page__wrapper_locked');
 		} else {
 			this._wrapper.classList.remove('page__wrapper_locked');
+		}
+	}
+
+	updateCatalogItem(index: number, newItem: HTMLElement) {
+		// Проверяем, что индекс находится в пределах массива каталога
+		if (index >= 0 && index < this._catalog.children.length) {
+			this._catalog.replaceChild(newItem, this._catalog.children[index]);
+		} else {
+			console.error('Index is out of range');
 		}
 	}
 }
